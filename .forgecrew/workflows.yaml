@@ -1,0 +1,85 @@
+# ForgeCrew Workflow Definitions
+# Workflows define how agents collaborate on tasks.
+
+workflows:
+  loop_engineering:
+    name: Loop Engineering
+    description: The core iterative engineering loop (Goal → Plan → Retrieve → Act → Observe → Reflect → Improve → Review → CommitMemory).
+    steps:
+      - id: goal
+        name: Goal
+        description: Clarify the task goal and acceptance criteria.
+        agent: pm
+        mode: ask
+      - id: plan
+        name: Plan
+        description: Generate a task plan with dependencies.
+        agent: architect
+        mode: architecture
+      - id: retrieve
+        name: Retrieve
+        description: Retrieve relevant context from repo, memory, and docs.
+        agent: repo_analyst
+        mode: analyze
+      - id: act
+        name: Act
+        description: Execute code changes or tool calls.
+        agent: backend_engineer
+        mode: code
+      - id: observe
+        name: Observe
+        description: Observe test results, logs, and diffs.
+        agent: qa_engineer
+        mode: test
+      - id: reflect
+        name: Reflect
+        description: Reflect on failures and identify root causes.
+        agent: qa_engineer
+        mode: analyze
+      - id: improve
+        name: Improve
+        description: Apply fixes based on reflection.
+        agent: backend_engineer
+        mode: debug
+      - id: review
+        name: Review
+        description: Review code quality and approve or reject changes.
+        agent: code_reviewer
+        mode: strict_review
+      - id: commit_memory
+        name: Commit Memory
+        description: Persist lessons learned and project knowledge.
+        agent: memory_agent
+        mode: summarize
+    max_iterations: 3
+    require_approval_at:
+      - act
+      - improve
+
+  quick_fix:
+    name: Quick Fix
+    description: A lightweight loop for simple bug fixes.
+    steps:
+      - id: retrieve
+        name: Retrieve
+        description: Find relevant code and context.
+        agent: repo_analyst
+        mode: analyze
+      - id: act
+        name: Act
+        description: Apply the fix.
+        agent: backend_engineer
+        mode: patch
+      - id: observe
+        name: Observe
+        description: Run tests and verify.
+        agent: qa_engineer
+        mode: test
+      - id: review
+        name: Review
+        description: Quick review.
+        agent: code_reviewer
+        mode: strict_review
+    max_iterations: 2
+    require_approval_at:
+      - act

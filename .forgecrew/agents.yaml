@@ -1,0 +1,241 @@
+# ForgeCrew Agent Definitions
+# Each agent is a virtual team member with a role, model, and permissions.
+
+agents:
+  team_architect:
+    agent_id: team_architect
+    name: Team Architect
+    description: Analyzes the project and recommends team composition.
+    default_model: gpt_5_5
+    fallback_models:
+      - claude_opus_4_8
+      - glm_5_2
+    permission_level: read_only
+    require_approval: false
+    tools:
+      - scan_project
+      - list_agents
+      - list_models
+    modes:
+      - analyze
+      - recommend
+
+  orchestrator:
+    agent_id: orchestrator
+    name: Orchestrator
+    description: Coordinates multi-agent workflows and manages task state.
+    default_model: gpt_5_5
+    fallback_models:
+      - claude_opus_4_8
+      - glm_5_2
+    permission_level: read_only
+    require_approval: false
+    tools:
+      - read_team_config
+      - dispatch_agent
+      - check_state
+    modes:
+      - coordinate
+      - monitor
+
+  pm:
+    agent_id: pm
+    name: Product Manager
+    description: Clarifies requirements, writes PRDs, defines acceptance criteria.
+    default_model: claude_opus_4_8
+    fallback_models:
+      - gpt_5_5
+      - gemini_3_1_pro
+    permission_level: read_only
+    require_approval: false
+    tools:
+      - read_file
+      - search_code
+    modes:
+      - ask
+      - prd
+      - acceptance
+
+  architect:
+    agent_id: architect
+    name: Software Architect
+    description: Designs technical solutions, modules, interfaces, and data flows.
+    default_model: gpt_5_5
+    fallback_models:
+      - claude_opus_4_8
+      - glm_5_2
+    permission_level: read_only
+    require_approval: false
+    tools:
+      - read_file
+      - search_code
+      - read_project_profile
+    modes:
+      - architecture
+      - review
+      - refactor
+
+  repo_analyst:
+    agent_id: repo_analyst
+    name: Repository Analyst
+    description: Analyzes repository structure, finds relevant files, builds code maps.
+    default_model: devstral_2
+    fallback_models:
+      - glm_5_2
+      - qwen3_coder
+      - deepseek_v4_pro
+    permission_level: read_only
+    require_approval: false
+    tools:
+      - scan_project
+      - search_code
+      - read_file
+      - build_repo_map
+    modes:
+      - analyze
+      - map
+      - impact
+
+  backend_engineer:
+    agent_id: backend_engineer
+    name: Backend Engineer
+    description: Implements backend logic, APIs, database access, and bug fixes.
+    default_model: glm_5_2
+    fallback_models:
+      - kimi_k2_7_code
+      - qwen3_coder
+      - deepseek_v4_pro
+    permission_level: patch_only
+    require_approval: true
+    tools:
+      - read_file
+      - search_code
+      - generate_patch
+      - run_test
+    modes:
+      - code
+      - debug
+      - patch
+      - test_fix
+
+  frontend_engineer:
+    agent_id: frontend_engineer
+    name: Frontend Engineer
+    description: Implements UI components, pages, API integration, and styles.
+    default_model: kimi_k2_7_code
+    fallback_models:
+      - qwen3_coder
+      - glm_5_2
+    permission_level: patch_only
+    require_approval: true
+    tools:
+      - read_file
+      - search_code
+      - generate_patch
+      - run_test
+    modes:
+      - code
+      - debug
+      - patch
+      - ui
+
+  qa_engineer:
+    agent_id: qa_engineer
+    name: QA Engineer
+    description: Writes tests, analyzes failures, and generates test reports.
+    default_model: deepseek_v4_pro
+    fallback_models:
+      - qwen3_coder
+      - glm_5_2
+      - kimi_k2_7_code
+    permission_level: patch_only
+    require_approval: true
+    tools:
+      - read_file
+      - search_code
+      - generate_patch
+      - run_test
+    modes:
+      - test
+      - analyze
+      - report
+
+  code_reviewer:
+    agent_id: code_reviewer
+    name: Code Reviewer
+    description: Reviews code quality, security, performance, and architecture consistency.
+    default_model: claude_opus_4_8
+    fallback_models:
+      - gpt_5_5
+      - deepseek_v4_pro
+      - glm_5_2
+    permission_level: read_only
+    require_approval: false
+    tools:
+      - read_file
+      - search_code
+      - read_git_diff
+    modes:
+      - strict_review
+      - security_review
+      - performance_review
+
+  devops:
+    agent_id: devops
+    name: DevOps Engineer
+    description: Handles Docker, CI/CD, build failures, and deployment scripts.
+    default_model: qwen3_7
+    fallback_models:
+      - deepseek_v4_pro
+      - qwen3_coder
+      - glm_5_2
+    permission_level: write_with_approval
+    require_approval: true
+    tools:
+      - read_file
+      - search_code
+      - run_test
+      - generate_patch
+    modes:
+      - build
+      - deploy
+      - debug
+
+  memory_agent:
+    agent_id: memory_agent
+    name: Memory Agent
+    description: Summarizes tasks, cleans memory, decides what to persist.
+    default_model: gpt_5_5
+    fallback_models:
+      - claude_opus_4_8
+      - deepseek_v4_pro
+      - glm_5_2
+    permission_level: read_only
+    require_approval: false
+    tools:
+      - read_memory
+      - write_memory
+    modes:
+      - summarize
+      - clean
+      - index
+
+  self_iteration:
+    agent_id: self_iteration
+    name: Self-Iteration Agent
+    description: Analyzes failures, extracts skills, suggests optimizations.
+    default_model: gpt_5_5
+    fallback_models:
+      - claude_opus_4_8
+      - deepseek_v4_pro
+      - glm_5_2
+    permission_level: read_only
+    require_approval: true
+    tools:
+      - read_eval
+      - read_memory
+      - suggest
+    modes:
+      - reflect
+      - skill_extract
+      - router_optimize

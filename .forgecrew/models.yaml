@@ -1,0 +1,84 @@
+# ForgeCrew Model Definitions
+# Each model defines a provider, capabilities, and cost tier.
+
+models:
+  gpt_5_5:
+    provider: openai
+    model: gpt-5.5
+    api_key_env: OPENAI_API_KEY
+    role: reasoning
+    cost_tier: high
+    supports_tools: true
+    supports_vision: true
+
+  claude_opus_4_8:
+    provider: anthropic
+    model: claude-opus-4-8
+    api_key_env: ANTHROPIC_API_KEY
+    role: review
+    cost_tier: high
+    supports_tools: true
+    supports_vision: true
+
+  gemini_3_1_pro:
+    provider: google
+    model: gemini-3.1-pro
+    api_key_env: GEMINI_API_KEY
+    role: multimodal
+    cost_tier: high
+    supports_tools: true
+    supports_vision: true
+
+  glm_5_2:
+    provider: zhipu
+    model: glm-5.2
+    api_key_env: ZHIPU_API_KEY
+    role: coding
+    cost_tier: medium
+    supports_tools: true
+    supports_vision: false
+
+  kimi_k2_7_code:
+    provider: moonshot
+    model: kimi-k2.7-code
+    api_key_env: MOONSHOT_API_KEY
+    role: coding
+    cost_tier: medium
+    supports_tools: true
+    supports_vision: false
+
+  deepseek_v4_pro:
+    provider: deepseek
+    model: deepseek-v4-pro
+    api_key_env: DEEPSEEK_API_KEY
+    role: coding
+    cost_tier: low
+    supports_tools: true
+    supports_vision: false
+
+  qwen3_coder:
+    provider: dashscope
+    model: qwen3-coder
+    api_key_env: DASHSCOPE_API_KEY
+    role: coding
+    cost_tier: low
+    supports_tools: true
+    supports_vision: false
+
+  qwen3_7:
+    provider: dashscope
+    model: qwen3.7
+    api_key_env: DASHSCOPE_API_KEY
+    role: tool_use
+    cost_tier: low
+    supports_tools: true
+    supports_vision: false
+
+  devstral_2:
+    provider: devstral
+    model: devstral-2
+    api_key_env: DEVSTRAL_API_KEY
+    role: coding
+    cost_tier: medium
+    supports_tools: true
+    supports_vision: false
