@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/1424772/ForgeCrew/internal/config"
+	"github.com/1424772/ForgeCrew/internal/i18n"
+	"github.com/1424772/ForgeCrew/internal/settings"
 	"github.com/spf13/cobra"
 )
 
@@ -25,6 +28,15 @@ Re-running will not overwrite existing files unless --force is provided.`,
 
 func runInit(cmd *cobra.Command, args []string) error {
 	force := initForce
+
+	// Read locale from settings, default to zh.
+	locale := "zh"
+	settingsPath := filepath.Join(config.ConfigDir, settings.SettingsYAML)
+	if s, err := settings.Load(settingsPath); err == nil {
+		locale = s.Language
+	}
+	loc := i18n.Locale(locale)
+
 	if err := config.EnsureDir(config.ConfigDir); err != nil {
 		return err
 	}
@@ -39,7 +51,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	// Write AGENTS.md
-	if err := writeIfMissing("AGENTS.md", config.DefaultAgentsMD, force); err != nil {
+	w := cmd.OutOrStdout()
+	if err := writeIfMissing(w, "AGENTS.md", config.DefaultAgentsMD, force, loc); err != nil {
 		return err
 	}
 
@@ -50,18 +63,28 @@ func runInit(cmd *cobra.Command, args []string) error {
 		config.ConfigDir + "/" + config.WorkflowsYAML: config.DefaultWorkflowsYAML,
 	}
 	for path, content := range cfgFiles {
-		if err := writeIfMissing(path, content, force); err != nil {
+		if err := writeIfMissing(w, path, content, force, loc); err != nil {
 			return err
 		}
 	}
 
-	fmt.Println("ForgeCrew initialized successfully.")
-	fmt.Println("  AGENTS.md created")
-	fmt.Println("  .forgecrew/agents.yaml created")
-	fmt.Println("  .forgecrew/models.yaml created")
-	fmt.Println("  .forgecrew/workflows.yaml created")
-	fmt.Println("  .forgecrew/memory/ created")
-	fmt.Println("  .forgecrew/evals/ created")
-	fmt.Println("  .forgecrew/checkpoints/ created")
+	// Write settings.yaml (always create if missing, overwrite if --force).
+	if !config.FileExists(settingsPath) || force {
+		if err := settings.Save(settingsPath, settings.Default()); err != nil {
+			return fmt.Errorf("write settings.yaml: %w", err)
+		}
+	} else {
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.T("init.skipping", loc)+settingsPath)
+	}
+
+	fmt.Fprintln(cmd.OutOrStdout(), i18n.T("init.success", loc))
+	fmt.Fprintln(cmd.OutOrStdout(), "  AGENTS.md"+i18n.T("init.created", loc))
+	fmt.Fprintln(cmd.OutOrStdout(), "  "+config.ConfigDir+"/"+config.AgentsYAML+i18n.T("init.created", loc))
+	fmt.Fprintln(cmd.OutOrStdout(), "  "+config.ConfigDir+"/"+config.ModelsYAML+i18n.T("init.created", loc))
+	fmt.Fprintln(cmd.OutOrStdout(), "  "+config.ConfigDir+"/"+config.WorkflowsYAML+i18n.T("init.created", loc))
+	fmt.Fprintln(cmd.OutOrStdout(), "  "+config.ConfigDir+"/"+config.SettingsYAML+i18n.T("init.created", loc))
+	fmt.Fprintln(cmd.OutOrStdout(), "  "+config.ConfigDir+"/"+config.MemoryDir+"/"+i18n.T("init.created", loc))
+	fmt.Fprintln(cmd.OutOrStdout(), "  "+config.ConfigDir+"/"+config.EvalsDir+"/"+i18n.T("init.created", loc))
+	fmt.Fprintln(cmd.OutOrStdout(), "  "+config.ConfigDir+"/"+config.CheckpointsDir+"/"+i18n.T("init.created", loc))
 	return nil
 }

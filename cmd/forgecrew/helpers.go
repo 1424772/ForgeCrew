@@ -2,14 +2,17 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
+
+	"github.com/1424772/ForgeCrew/internal/i18n"
 )
 
 // writeIfMissing writes content to path only if the file doesn't exist or force is true.
-func writeIfMissing(path, content string, force bool) error {
+func writeIfMissing(w io.Writer, path, content string, force bool, loc i18n.Locale) error {
 	if !force {
 		if _, err := os.Stat(path); err == nil {
-			fmt.Printf("  skipping %s (already exists, use --force to overwrite)\n", path)
+			fmt.Fprintln(w, i18n.T("init.skipping", loc)+path)
 			return nil
 		}
 	}

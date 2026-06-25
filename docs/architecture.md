@@ -73,9 +73,25 @@ forgecrew checkpoint list:
   checkpoint.NewStore().List()
       ↓
   读取 .forgecrew/checkpoints/*.json → 逐条输出
+
+forgecrew task "<goal>" --dry-run:
+  orchestrator.New(3, dryRun=true)
+      ↓
+  sm.RunFull(goal) → 循环执行所有步骤
+      ↓
+  RunResult.FormatText() → 输出带迭代标记的状态序列
 ```
 
 ## 3. Registry 设计
+
+### Cross-Validation
+
+Agent 和 Model Registry 在加载后可通过交叉校验方法验证引用的完整性：
+
+- `Registry.ValidateModelRefs(models ModelLookup) error` — 校验每个 Agent 的 `DefaultModel` 和 `FallbackModels` 是否在 Model Registry 中存在
+- `Registry.ValidateTools(knownNames map[string]bool) error` — 校验每个 Agent 的 `Tools` 是否匹配已知的 ACI 动作名或系统保留工具名。比较为大小写不敏感 + 去下划线归一化（如 `read_file` 匹配 `ReadFile`）
+
+### Model Registry
 
 ### Model Registry
 
@@ -194,6 +210,8 @@ type StateMachine struct {
 - MVP 仅支持 dry-run 模式（不接真实模型）
 - 第一轮从 Goal 开始，后续迭代从 Plan 开始（跳过 Goal）
 - 最多迭代 MaxIter 次
+- `RunFull(goal string) *RunResult` — 一次性跑完完整循环，返回所有步骤结果
+- `RunResult.FormatText() string` — 人类可读输出，按迭代分组并标注 `[dry-run]`
 
 ## 7. Agent-Computer Interface (ACI) 安全边界
 

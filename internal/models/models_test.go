@@ -108,3 +108,30 @@ func TestValidateModel(t *testing.T) {
 		})
 	}
 }
+
+func TestExists(t *testing.T) {
+	r := NewRegistry()
+	// Manually insert a model (bypass Load).
+	r.models["gpt_5_5"] = ModelDefinition{ModelID: "gpt_5_5", Provider: "openai"}
+
+	if !r.Exists("gpt_5_5") {
+		t.Error("Exists for registered model should return true")
+	}
+	if r.Exists("nonexistent") {
+		t.Error("Exists for unknown model should return false")
+	}
+}
+
+func TestModelIDs(t *testing.T) {
+	r := NewRegistry()
+	r.models["a"] = ModelDefinition{ModelID: "a"}
+	r.models["b"] = ModelDefinition{ModelID: "b"}
+
+	ids := r.ModelIDs()
+	if len(ids) != 2 {
+		t.Fatalf("expected 2 IDs, got %d", len(ids))
+	}
+	if !ids["a"] || !ids["b"] {
+		t.Error("ModelIDs missing expected keys")
+	}
+}

@@ -23,6 +23,7 @@ const (
 	AgentsYAML     = "agents.yaml"
 	ModelsYAML     = "models.yaml"
 	WorkflowsYAML  = "workflows.yaml"
+	SettingsYAML   = "settings.yaml"
 	TeamsYAML      = "teams.yaml"
 	MemoryDir      = "memory"
 	EvalsDir       = "evals"

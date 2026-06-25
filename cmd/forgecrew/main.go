@@ -32,6 +32,8 @@ func init() {
 	rootCmd.AddCommand(teamCmd())
 	rootCmd.AddCommand(diffCmd())
 	rootCmd.AddCommand(checkpointCmd())
+	rootCmd.AddCommand(taskCmd())
+	rootCmd.AddCommand(langCmd())
 }
 
 func main() {

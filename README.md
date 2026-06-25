@@ -89,6 +89,14 @@ forgecrew diff
 forgecrew checkpoint list
 ```
 
+### 7. 执行任务（dry-run）
+
+```bash
+forgecrew task "add login validation" --dry-run
+```
+
+打印完整的 Loop Engineering 状态序列（Goal → Plan → Retrieve → Act → Observe → Reflect → Improve → Review → CommitMemory），不做实际修改。
+
 ## CLI 命令
 
 | 命令 | 说明 |
@@ -101,6 +109,7 @@ forgecrew checkpoint list
 | `forgecrew team suggest` | 推荐团队配置 |
 | `forgecrew diff` | 显示 git diff |
 | `forgecrew checkpoint list` | 列出所有检查点 |
+| `forgecrew task <goal>` | 通过 Loop Engineering 状态机执行任务 |
 
 ## 项目结构
 

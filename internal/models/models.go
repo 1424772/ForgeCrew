@@ -71,6 +71,21 @@ func (r *Registry) Get(id string) (*ModelDefinition, error) {
 	return &m, nil
 }
 
+// Exists returns true if a model with the given ID is registered.
+func (r *Registry) Exists(id string) bool {
+	_, ok := r.models[id]
+	return ok
+}
+
+// ModelIDs returns the set of all registered model IDs.
+func (r *Registry) ModelIDs() map[string]bool {
+	ids := make(map[string]bool, len(r.models))
+	for id := range r.models {
+		ids[id] = true
+	}
+	return ids
+}
+
 // List returns all model definitions.
 func (r *Registry) List() []ModelDefinition {
 	result := make([]ModelDefinition, 0, len(r.models))

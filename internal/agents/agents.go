@@ -4,6 +4,7 @@ package agents
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/1424772/ForgeCrew/internal/config"
 	"gopkg.in/yaml.v3"
@@ -81,6 +82,65 @@ func (r *Registry) List() []AgentDefinition {
 		result = append(result, a)
 	}
 	return result
+}
+
+// ModelLookup is the interface the agent registry needs from a model
+// registry for cross-validation.
+type ModelLookup interface {
+	Exists(id string) bool
+}
+
+// ValidateModelRefs checks that every agent's DefaultModel and FallbackModels
+// reference models that exist in the model registry. It returns nil if all
+// references are valid, or an error listing every broken reference.
+func (r *Registry) ValidateModelRefs(models ModelLookup) error {
+	var errs []string
+	for _, a := range r.agents {
+		if !models.Exists(a.DefaultModel) {
+			errs = append(errs, fmt.Sprintf("agent %q: default_model %q does not exist in model registry", a.AgentID, a.DefaultModel))
+		}
+		for _, fm := range a.FallbackModels {
+			if !models.Exists(fm) {
+				errs = append(errs, fmt.Sprintf("agent %q: fallback_model %q does not exist in model registry", a.AgentID, fm))
+			}
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("agent-model cross-validation failed:\n  - %s", strings.Join(errs, "\n  - "))
+	}
+	return nil
+}
+
+// ValidateTools checks that every agent's Tools entries match known names
+// (ACI actions or system-reserved tools). Comparison is case-insensitive
+// with underscores stripped so snake_case tool names match PascalCase ACI
+// actions. Pass nil for knownNames to skip validation.
+func (r *Registry) ValidateTools(knownNames map[string]bool) error {
+	if knownNames == nil {
+		return nil
+	}
+	// Build normalized lookup.
+	normalized := make(map[string]bool, len(knownNames))
+	for name := range knownNames {
+		normalized[normalizeName(name)] = true
+	}
+	var errs []string
+	for _, a := range r.agents {
+		for _, tool := range a.Tools {
+			if !normalized[normalizeName(tool)] {
+				errs = append(errs, fmt.Sprintf("agent %q: tool %q is not a known ACI action or system-reserved tool", a.AgentID, tool))
+			}
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("agent-tool validation failed:\n  - %s", strings.Join(errs, "\n  - "))
+	}
+	return nil
+}
+
+// normalizeName folds a name for comparison: lowercase + remove underscores.
+func normalizeName(name string) string {
+	return strings.ToLower(strings.ReplaceAll(name, "_", ""))
 }
 
 func validateAgent(a AgentDefinition) error {

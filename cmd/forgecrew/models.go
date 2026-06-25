@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/1424772/ForgeCrew/internal/config"
+	"github.com/1424772/ForgeCrew/internal/i18n"
 	"github.com/1424772/ForgeCrew/internal/models"
 	"github.com/spf13/cobra"
 )
@@ -34,11 +35,15 @@ func runModelsList(cmd *cobra.Command, args []string) error {
 	}
 	list := registry.List()
 	if len(list) == 0 {
-		fmt.Println("No models registered. Run 'forgecrew init' first.")
+		locale, err := loadLocale()
+		if err != nil {
+			return err
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), i18n.T("models.empty", i18n.Locale(locale)))
 		return nil
 	}
 	for _, m := range list {
-		fmt.Printf("  %-20s %s/%s  tier=%s\n", m.ModelID, m.Provider, m.Model, m.CostTier)
+		fmt.Fprintf(cmd.OutOrStdout(), "  %-20s %s/%s  tier=%s\n", m.ModelID, m.Provider, m.Model, m.CostTier)
 	}
 	return nil
 }

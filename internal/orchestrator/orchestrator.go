@@ -4,7 +4,10 @@ package orchestrator
 
 import (
 	"fmt"
+	"strings"
 	"time"
+
+	"github.com/1424772/ForgeCrew/internal/i18n"
 )
 
 // Step represents one state in the Loop Engineering cycle.
@@ -55,13 +58,15 @@ type StateRecord struct {
 }
 
 // New creates a new Loop Engineering state machine.
-// maxIter is the maximum number of full cycles (default 3).
+// maxIter is the total number of full cycles (default 3).
+// Iterations start at 1, so New(3, ...) runs iterations 1, 2, 3.
 func New(maxIter int, dryRun bool) *StateMachine {
 	if maxIter <= 0 {
 		maxIter = 3
 	}
 	return &StateMachine{
 		CurrentStep: StepGoal,
+		Iteration:   1,
 		MaxIter:     maxIter,
 		DryRun:      dryRun,
 	}
@@ -147,4 +152,74 @@ func (sm *StateMachine) record(step Step, note string) {
 		Timestamp: time.Now(),
 		Note:      note,
 	})
+}
+
+// RunResult is the complete output of a full state machine run.
+type RunResult struct {
+	Goal   string       `json:"goal"`
+	DryRun bool         `json:"dry_run"`
+	Steps  []StepResult `json:"steps"`
+}
+
+// RunFull executes the complete Loop Engineering cycle for a given goal.
+// It advances through all steps until completion and returns the full result.
+func (sm *StateMachine) RunFull(goal string) *RunResult {
+	result := &RunResult{
+		Goal:   goal,
+		DryRun: sm.DryRun,
+	}
+	for sm.Next() {
+		sr, _ := sm.Execute(goal)
+		result.Steps = append(result.Steps, *sr)
+	}
+	return result
+}
+
+// FormatText returns a human-readable representation of the run result
+// with iteration grouping and dry-run markers. locale must be "zh" or "en".
+func (rr *RunResult) FormatText(locale string) string {
+	loc := i18n.Locale(locale)
+	var b strings.Builder
+
+	// Header.
+	dryTag := ""
+	if rr.DryRun {
+		dryTag = i18n.T("task.dry_run_tag", loc)
+	}
+	fmt.Fprintf(&b, "%s%q%s\n", i18n.T("task.header", loc), rr.Goal, dryTag)
+
+	if len(rr.Steps) == 0 {
+		fmt.Fprint(&b, i18n.T("task.no_steps", loc))
+		return b.String()
+	}
+
+	// Group steps by iteration. An iteration break happens when we see a
+	// step we've already seen in the current cycle.
+	seen := map[Step]bool{}
+	iter := 1
+	printedIterHeader := false
+
+	for _, s := range rr.Steps {
+		if seen[s.Step] {
+			// New iteration: a step name repeated.
+			iter++
+			seen = map[Step]bool{}
+			printedIterHeader = false
+		}
+		seen[s.Step] = true
+
+		if !printedIterHeader {
+			fmt.Fprintf(&b, "\n%s%d%s:\n", i18n.T("task.iteration", loc), iter, i18n.T("task.iteration_suffix", loc))
+			printedIterHeader = true
+		}
+		if rr.DryRun {
+			dryTag := i18n.T("task.dry_run_note", loc)
+			desc := fmt.Sprintf(i18n.T("task.dry_run_format", loc), rr.Goal, string(s.Step))
+			fmt.Fprintf(&b, "  %-16s %s%s\n", s.Step, dryTag, desc)
+		} else {
+			fmt.Fprintf(&b, "  %-16s %s\n", s.Step, s.Note)
+		}
+	}
+
+	return b.String()
 }
