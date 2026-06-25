@@ -5,6 +5,7 @@ package scanner
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -123,25 +124,74 @@ func (s *Scanner) detectFromFiles(root string, p *Profile) {
 }
 
 func (s *Scanner) detectTests(root string, p *Profile) {
-	testPatterns := []string{
-		"*_test.go", "*.test.ts", "*.test.js", "*.test.tsx", "*.spec.ts",
-		"*.spec.js", "test_*.py", "*_test.py", "tests/", "__tests__/",
-		"src/test/", "spec/",
+	// Directories to skip during walk.
+	skipDirs := map[string]bool{
+		".git":         true,
+		".forgecrew":   true,
+		"vendor":       true,
+		"node_modules": true,
 	}
-	for _, pattern := range testPatterns {
-		matches, _ := filepath.Glob(filepath.Join(root, pattern))
-		if len(matches) > 0 {
-			p.HasTests = true
-			return
+
+	// Test file name patterns (exact suffix match).
+	testSuffixes := []string{
+		"_test.go",
+		".test.ts",
+		".test.js",
+		".test.tsx",
+		".spec.ts",
+		".spec.js",
+		".spec.tsx",
+		"_test.py",
+		"test.py",
+	}
+
+	// Test directory names (exact match).
+	testDirs := map[string]bool{
+		"tests":     true,
+		"__tests__": true,
+		"spec":      true,
+		"test":      true,
+	}
+
+	found := false
+	filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || found {
+			return nil
 		}
-		// Check if directory exists
-		if strings.HasSuffix(pattern, "/") {
-			if info, err := os.Stat(filepath.Join(root, pattern)); err == nil && info.IsDir() {
-				p.HasTests = true
-				return
+
+		name := d.Name()
+
+		// Skip ignored directories.
+		if d.IsDir() {
+			if skipDirs[name] {
+				return fs.SkipDir
+			}
+			// Check if this directory itself is a test directory.
+			if testDirs[name] {
+				found = true
+				return nil
+			}
+			return nil
+		}
+
+		// Check if parent directory is a test directory.
+		parent := filepath.Base(filepath.Dir(path))
+		if testDirs[parent] {
+			found = true
+			return nil
+		}
+
+		// Check file suffix.
+		for _, suffix := range testSuffixes {
+			if strings.HasSuffix(name, suffix) {
+				found = true
+				return nil
 			}
 		}
-	}
+		return nil
+	})
+
+	p.HasTests = found
 }
 
 func (s *Scanner) detectDocker(root string, p *Profile) {

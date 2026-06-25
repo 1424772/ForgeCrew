@@ -15,17 +15,59 @@ func ReadDiff(root string) (string, error) {
 	if !isGitRepo(root) {
 		return "", fmt.Errorf("not a git repository: %s (run 'git init' first)", root)
 	}
-	cmd := exec.Command("git", "diff")
-	cmd.Dir = root
-	out, err := cmd.Output()
+
+	var result strings.Builder
+
+	// Run git diff for tracked changes.
+	diffCmd := exec.Command("git", "diff")
+	diffCmd.Dir = root
+	diffOut, err := diffCmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("git diff failed: %w", err)
 	}
-	diff := string(out)
-	if diff == "" {
+	diff := string(diffOut)
+
+	// Run git status --short for untracked files.
+	statusCmd := exec.Command("git", "status", "--short")
+	statusCmd.Dir = root
+	statusOut, err := statusCmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("git status failed: %w", err)
+	}
+	status := strings.TrimSpace(string(statusOut))
+
+	hasUntracked := false
+	var untrackedLines []string
+	for _, line := range strings.Split(status, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		// Untracked files start with "??".
+		if strings.HasPrefix(line, "??") {
+			hasUntracked = true
+			untrackedLines = append(untrackedLines, "  "+line)
+		}
+	}
+
+	if diff != "" {
+		result.WriteString(diff)
+	}
+	if hasUntracked {
+		if result.Len() > 0 {
+			result.WriteString("\n")
+		}
+		result.WriteString("Untracked files:\n")
+		for _, line := range untrackedLines {
+			result.WriteString(line)
+			result.WriteString("\n")
+		}
+	}
+
+	if result.Len() == 0 {
 		return "No changes (working tree clean)\n", nil
 	}
-	return diff, nil
+	return result.String(), nil
 }
 
 // GetCurrentHash returns the current HEAD git hash.

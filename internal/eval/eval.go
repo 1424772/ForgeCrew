@@ -14,15 +14,15 @@ import (
 
 // Record captures the result of a single task evaluation.
 type Record struct {
-	ID                    string  `json:"id"`
-	TaskID                string  `json:"task_id"`
-	Success               bool    `json:"success"`
-	TestPassed            bool    `json:"test_passed"`
-	ReviewPassed          bool    `json:"review_passed"`
-	Rounds                int     `json:"rounds"`
-	CostEstimate          float64 `json:"cost_estimate"`
-	HumanInterventionCount int    `json:"human_intervention_count"`
-	Timestamp             string  `json:"timestamp"`
+	ID                     string  `json:"id"`
+	TaskID                 string  `json:"task_id"`
+	Success                bool    `json:"success"`
+	TestPassed             bool    `json:"test_passed"`
+	ReviewPassed           bool    `json:"review_passed"`
+	Rounds                 int     `json:"rounds"`
+	CostEstimate           float64 `json:"cost_estimate"`
+	HumanInterventionCount int     `json:"human_intervention_count"`
+	Timestamp              string  `json:"timestamp"`
 }
 
 // Store manages evaluation records.

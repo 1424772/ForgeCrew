@@ -116,8 +116,11 @@ func TestFormatInvalid(t *testing.T) {
 func TestDetectPython(t *testing.T) {
 	tmp := t.TempDir()
 	os.WriteFile(filepath.Join(tmp, "pyproject.toml"), []byte("[tool.poetry]"), 0644)
-	os.WriteFile(filepath.Join(tmp, "tests"), nil, 0755)
-	os.MkdirAll(filepath.Join(tmp, "tests"), 0755)
+
+	// Create a tests directory with a test file inside.
+	testsDir := filepath.Join(tmp, "tests")
+	os.MkdirAll(testsDir, 0755)
+	os.WriteFile(filepath.Join(testsDir, "test_example.py"), []byte("def test(): pass"), 0644)
 
 	s := New()
 	p, err := s.Scan(tmp)
@@ -130,5 +133,83 @@ func TestDetectPython(t *testing.T) {
 	}
 	if !p.HasTests {
 		t.Error("should detect tests directory")
+	}
+}
+
+func TestDetectTestsRecursive(t *testing.T) {
+	tmp := t.TempDir()
+
+	// Deeply nested test file.
+	nestedDir := filepath.Join(tmp, "pkg", "service", "auth")
+	os.MkdirAll(nestedDir, 0755)
+	os.WriteFile(filepath.Join(nestedDir, "auth_test.go"), []byte("package auth"), 0644)
+
+	s := New()
+	p, err := s.Scan(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !p.HasTests {
+		t.Error("should detect deeply nested _test.go files")
+	}
+}
+
+func TestDetectTestsSkipIgnored(t *testing.T) {
+	tmp := t.TempDir()
+
+	// Test file inside .git should be skipped.
+	gitDir := filepath.Join(tmp, ".git")
+	os.MkdirAll(gitDir, 0755)
+	os.WriteFile(filepath.Join(gitDir, "fake_test.go"), []byte("package git"), 0644)
+
+	// Test file inside vendor should be skipped.
+	vendorDir := filepath.Join(tmp, "vendor", "pkg")
+	os.MkdirAll(vendorDir, 0755)
+	os.WriteFile(filepath.Join(vendorDir, "vendor_test.go"), []byte("package vendor"), 0644)
+
+	// Test file inside node_modules should be skipped.
+	nmDir := filepath.Join(tmp, "node_modules", "lib")
+	os.MkdirAll(nmDir, 0755)
+	os.WriteFile(filepath.Join(nmDir, "lib.test.ts"), []byte("test"), 0644)
+
+	s := New()
+	p, err := s.Scan(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.HasTests {
+		t.Error("should NOT detect tests from .git, vendor, or node_modules")
+	}
+}
+
+func TestDetectTestsDirectoryMatch(t *testing.T) {
+	tmp := t.TempDir()
+
+	// __tests__ directory with a JS file.
+	testsDir := filepath.Join(tmp, "__tests__")
+	os.MkdirAll(testsDir, 0755)
+	os.WriteFile(filepath.Join(testsDir, "helper.js"), []byte("// test helper"), 0644)
+
+	s := New()
+	p, err := s.Scan(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !p.HasTests {
+		t.Error("should detect tests from __tests__ directory")
+	}
+}
+
+func TestDetectTestsSpecFile(t *testing.T) {
+	tmp := t.TempDir()
+	os.WriteFile(filepath.Join(tmp, "button.spec.ts"), []byte("describe('button')"), 0644)
+
+	s := New()
+	p, err := s.Scan(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !p.HasTests {
+		t.Error("should detect .spec.ts files")
 	}
 }

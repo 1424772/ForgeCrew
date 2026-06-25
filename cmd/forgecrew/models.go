@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/1424772/ForgeCrew/internal/models"
 	"github.com/1424772/ForgeCrew/internal/config"
+	"github.com/1424772/ForgeCrew/internal/models"
 	"github.com/spf13/cobra"
 )
 

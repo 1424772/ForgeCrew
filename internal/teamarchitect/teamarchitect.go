@@ -9,7 +9,7 @@ import (
 
 // TeamConfig is the output of the Team Architect — a recommended team composition.
 type TeamConfig struct {
-	ProjectType    string           `yaml:"project_type" json:"project_type"`
+	ProjectType    string            `yaml:"project_type" json:"project_type"`
 	RequiredAgents []AgentAssignment `yaml:"required_agents" json:"required_agents"`
 	OptionalAgents []AgentAssignment `yaml:"optional_agents" json:"optional_agents"`
 }

@@ -12,16 +12,16 @@ type Step string
 
 // The nine states of Loop Engineering.
 const (
-	StepGoal          Step = "goal"
-	StepPlan          Step = "plan"
-	StepRetrieve      Step = "retrieve"
-	StepAct           Step = "act"
-	StepObserve       Step = "observe"
-	StepReflect       Step = "reflect"
-	StepImprove       Step = "improve"
-	StepReview        Step = "review"
-	StepCommitMemory  Step = "commit_memory"
-	StepDone          Step = "done"
+	StepGoal         Step = "goal"
+	StepPlan         Step = "plan"
+	StepRetrieve     Step = "retrieve"
+	StepAct          Step = "act"
+	StepObserve      Step = "observe"
+	StepReflect      Step = "reflect"
+	StepImprove      Step = "improve"
+	StepReview       Step = "review"
+	StepCommitMemory Step = "commit_memory"
+	StepDone         Step = "done"
 )
 
 // StateSequence is the canonical order of states.

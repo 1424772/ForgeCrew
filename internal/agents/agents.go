@@ -94,11 +94,11 @@ func validateAgent(a AgentDefinition) error {
 		return fmt.Errorf("default_model is required")
 	}
 	validPermissions := map[string]bool{
-		"read_only":            true,
-		"patch_only":           true,
-		"write_with_approval":  true,
-		"auto_write_in_sandbox": true,
-		"commit_with_approval":  true,
+		"read_only":                   true,
+		"patch_only":                  true,
+		"write_with_approval":         true,
+		"auto_write_in_sandbox":       true,
+		"commit_with_approval":        true,
 		"deploy_with_manual_approval": true,
 	}
 	if !validPermissions[a.PermissionLevel] {

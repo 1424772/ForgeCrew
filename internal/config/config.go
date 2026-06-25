@@ -20,12 +20,12 @@ const (
 
 // Config file names within .forgecrew/.
 const (
-	AgentsYAML    = "agents.yaml"
-	ModelsYAML    = "models.yaml"
-	WorkflowsYAML = "workflows.yaml"
-	TeamsYAML     = "teams.yaml"
-	MemoryDir     = "memory"
-	EvalsDir      = "evals"
+	AgentsYAML     = "agents.yaml"
+	ModelsYAML     = "models.yaml"
+	WorkflowsYAML  = "workflows.yaml"
+	TeamsYAML      = "teams.yaml"
+	MemoryDir      = "memory"
+	EvalsDir       = "evals"
 	CheckpointsDir = "checkpoints"
 )
 

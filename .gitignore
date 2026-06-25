@@ -40,3 +40,9 @@ credentials.json
 
 # Cache
 .cache/
+
+# Claude Code
+.claude/
+
+# Test temporary directories
+.testtmp/

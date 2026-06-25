@@ -16,13 +16,13 @@ import (
 
 // Checkpoint represents a saved state before/after agent modifications.
 type Checkpoint struct {
-	ID           string   `json:"id"`
-	Timestamp    string   `json:"timestamp"`
-	TaskID       string   `json:"task_id"`
-	AgentID      string   `json:"agent_id"`
-	ModelID      string   `json:"model_id,omitempty"`
-	ChangedFiles []string `json:"changed_files"`
-	GitHashBefore string  `json:"git_hash_before"`
+	ID            string   `json:"id"`
+	Timestamp     string   `json:"timestamp"`
+	TaskID        string   `json:"task_id"`
+	AgentID       string   `json:"agent_id"`
+	ModelID       string   `json:"model_id,omitempty"`
+	ChangedFiles  []string `json:"changed_files"`
+	GitHashBefore string   `json:"git_hash_before"`
 }
 
 // Store manages checkpoints on disk.

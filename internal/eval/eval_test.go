@@ -16,12 +16,12 @@ func TestWriteAndList(t *testing.T) {
 	s := &Store{dir: tmp}
 
 	record := &Record{
-		TaskID:                "task_001",
-		Success:               true,
-		TestPassed:            true,
-		ReviewPassed:          true,
-		Rounds:                3,
-		CostEstimate:          0.15,
+		TaskID:                 "task_001",
+		Success:                true,
+		TestPassed:             true,
+		ReviewPassed:           true,
+		Rounds:                 3,
+		CostEstimate:           0.15,
 		HumanInterventionCount: 1,
 	}
 	if err := s.Write(record); err != nil {
@@ -64,12 +64,12 @@ func TestRecordFields(t *testing.T) {
 	s := &Store{dir: tmp}
 
 	record := &Record{
-		TaskID:                "task_002",
-		Success:               false,
-		TestPassed:            false,
-		ReviewPassed:          false,
-		Rounds:                5,
-		CostEstimate:          0.50,
+		TaskID:                 "task_002",
+		Success:                false,
+		TestPassed:             false,
+		ReviewPassed:           false,
+		Rounds:                 5,
+		CostEstimate:           0.50,
 		HumanInterventionCount: 3,
 	}
 	if err := s.Write(record); err != nil {
