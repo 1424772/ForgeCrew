@@ -18,14 +18,30 @@ ForgeCrew 是一个 Go-native、CLI-first 的 **AI Software Company Runtime**。
 
 ## 安装
 
+### 脚本安装（推荐）
+
+**macOS / Linux：**
 ```bash
-# 从源码安装
+curl -fsSL https://raw.githubusercontent.com/1424772/ForgeCrew/main/scripts/install.sh | sh
+```
+
+**Windows PowerShell：**
+```powershell
+irm https://raw.githubusercontent.com/1424772/ForgeCrew/main/scripts/install.ps1 | iex
+```
+
+脚本会从 GitHub Releases 下载最新二进制，如果 release 不存在则自动回退到 `go install`。
+
+### 手动安装
+
+```bash
+# go install
+go install github.com/1424772/ForgeCrew/cmd/forgecrew@latest
+
+# 或从源码构建
 git clone https://github.com/1424772/ForgeCrew.git
 cd ForgeCrew
 go build -o forgecrew ./cmd/forgecrew
-
-# 或直接运行
-go run ./cmd/forgecrew
 ```
 
 要求 Go 1.21+。

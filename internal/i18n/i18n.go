@@ -140,4 +140,66 @@ var translations = map[string]map[Locale]string{
 		ZH: "没有注册的模型。请先运行 'forgecrew init'。",
 		EN: "No models registered. Run 'forgecrew init' first.",
 	},
+
+	// ── interactive mode ──
+	"interactive.banner": {
+		ZH: "ForgeCrew %s — AI Software Company Runtime",
+		EN: "ForgeCrew %s — AI Software Company Runtime",
+	},
+	"interactive.project": {
+		ZH: "项目: %s",
+		EN: "Project: %s",
+	},
+	"interactive.language": {
+		ZH: "语言: %s",
+		EN: "Language: %s",
+	},
+	"interactive.mode": {
+		ZH: "模式: ",
+		EN: "Mode: ",
+	},
+	"interactive.prompt": {
+		ZH: "> ",
+		EN: "> ",
+	},
+	"interactive.help": {
+		ZH: `可用命令:
+  /help          显示帮助
+  /exit          退出
+  /lang show     显示当前语言
+  /lang set <zh|en>  切换语言
+  /mode plan     切换到计划模式
+  /mode act      切换到执行模式
+  /mode review   切换到审查模式
+  /scan          扫描当前项目
+  /team          显示团队建议
+  直接输入任务目标即可通过 Loop Engineering 状态机执行 (dry-run)。`,
+		EN: `Available commands:
+  /help          Show this help
+  /exit          Exit
+  /lang show     Show current language
+  /lang set <zh|en>  Switch language
+  /mode plan     Switch to plan mode
+  /mode act      Switch to act mode
+  /mode review   Switch to review mode
+  /scan          Scan current project
+  /team          Show team suggestion
+  Type a task goal to run through the Loop Engineering state machine (dry-run).`,
+	},
+	"interactive.plan_mode_note": {
+		ZH: "[计划模式] 分析任务目标，生成执行计划...",
+		EN: "[plan mode] Analyzing task goal, generating execution plan...",
+	},
+	"interactive.dry_run_warning": {
+		ZH: "[演习模式] 所有操作均为模拟，不会修改任何文件。",
+		EN: "[dry-run] All operations are simulated. No files will be modified.",
+	},
+	"interactive.goodbye": {
+		ZH: "再见！",
+		EN: "Goodbye!",
+	},
+	"interactive.no_init": {
+		ZH: "提示: 当前项目尚未初始化。运行 'forgecrew init' 以生成配置。",
+		EN: "Hint: project not initialized. Run 'forgecrew init' to generate config.",
+	},
 }

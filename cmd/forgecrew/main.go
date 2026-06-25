@@ -21,6 +21,11 @@ Not a single coding agent — a virtual software company that builds teams
 based on your project's needs.`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
+	// When no subcommand is given, enter interactive mode instead of
+	// printing help. Pass --help explicitly to see help.
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return interactiveMode()
+	},
 }
 
 func init() {
