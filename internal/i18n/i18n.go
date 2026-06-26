@@ -164,27 +164,31 @@ var translations = map[string]map[Locale]string{
 	},
 	"interactive.help": {
 		ZH: `可用命令:
-  /help          显示帮助
-  /exit          退出
-  /lang show     显示当前语言
+  /help           显示帮助
+  /exit           退出
+  /lang show      显示当前语言
   /lang set <zh|en>  切换语言
-  /mode plan     切换到计划模式
-  /mode act      切换到执行模式
-  /mode review   切换到审查模式
-  /scan          扫描当前项目
-  /team          显示团队建议
-  直接输入任务目标即可通过 Loop Engineering 状态机执行 (dry-run)。`,
+  /mode show      显示当前模式
+  /mode plan      切换到计划模式 (dry-run)
+  /mode act       切换到执行模式 (dry-run, 写入未启用)
+  /mode review    切换到审查模式 (未接入 reviewer)
+  /scan           扫描当前项目
+  /team           显示团队建议
+  /validate       运行配置交叉校验
+  直接输入任务目标即可通过 Loop Engineering 状态机执行。`,
 		EN: `Available commands:
-  /help          Show this help
-  /exit          Exit
-  /lang show     Show current language
+  /help           Show this help
+  /exit           Exit
+  /lang show      Show current language
   /lang set <zh|en>  Switch language
-  /mode plan     Switch to plan mode
-  /mode act      Switch to act mode
-  /mode review   Switch to review mode
-  /scan          Scan current project
-  /team          Show team suggestion
-  Type a task goal to run through the Loop Engineering state machine (dry-run).`,
+  /mode show      Show current mode
+  /mode plan      Switch to plan mode (dry-run)
+  /mode act       Switch to act mode (dry-run, writes disabled)
+  /mode review    Switch to review mode (no reviewer yet)
+  /scan           Scan current project
+  /team           Show team suggestion
+  /validate       Run config cross-validation
+  Type a task goal to run through the Loop Engineering state machine.`,
 	},
 	"interactive.plan_mode_note": {
 		ZH: "[计划模式] 分析任务目标，生成执行计划...",
@@ -201,5 +205,33 @@ var translations = map[string]map[Locale]string{
 	"interactive.no_init": {
 		ZH: "提示: 当前项目尚未初始化。运行 'forgecrew init' 以生成配置。",
 		EN: "Hint: project not initialized. Run 'forgecrew init' to generate config.",
+	},
+	"interactive.start_hint": {
+		ZH: "输入 /help 查看命令，输入 /exit 退出。",
+		EN: "Type /help for commands, /exit to quit.",
+	},
+	"interactive.unknown_cmd": {
+		ZH: "未知命令: %s。输入 /help 查看可用命令。",
+		EN: "Unknown command: %s. Type /help for available commands.",
+	},
+	"interactive.review_disabled": {
+		ZH: "[审查模式] 当前阶段尚未接入真实 reviewer。建议使用 agents validate 和 diff 命令检查代码。",
+		EN: "[review mode] Real reviewer is not yet connected. Use 'agents validate' and 'diff' to inspect code.",
+	},
+	"interactive.act_disabled": {
+		ZH: "[执行模式] 当前阶段仍然为演习模式，真实写入能力尚未启用。任务仅通过 dry-run 模拟。",
+		EN: "[act mode] Real write capability is not yet enabled. Tasks run in dry-run simulation only.",
+	},
+	"interactive.scan_hint": {
+		ZH: "扫描当前项目... 请使用 'forgecrew scan' 查看完整项目画像。",
+		EN: "Scanning project... Use 'forgecrew scan' for full project profile.",
+	},
+	"interactive.team_hint": {
+		ZH: "获取团队建议... 请使用 'forgecrew team suggest' 查看完整团队配置。",
+		EN: "Getting team suggestion... Use 'forgecrew team suggest' for full team config.",
+	},
+	"interactive.validate_hint": {
+		ZH: "运行交叉校验... 请使用 'forgecrew agents validate' 执行完整校验。",
+		EN: "Running validation... Use 'forgecrew agents validate' for full cross-validation.",
 	},
 }

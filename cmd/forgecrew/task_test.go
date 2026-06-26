@@ -20,6 +20,8 @@ func executeTaskCmd(args ...string) (string, error) {
 }
 
 func TestTaskDryRun(t *testing.T) {
+	// Isolate in temp dir — no settings.yaml means default zh.
+	chdirTempDir(t)
 	out, err := executeTaskCmd("test-goal", "--dry-run")
 	if err != nil {
 		t.Fatalf("task --dry-run failed: %v", err)
@@ -42,6 +44,7 @@ func TestTaskDryRun(t *testing.T) {
 }
 
 func TestTaskRequiresArg(t *testing.T) {
+	chdirTempDir(t)
 	_, err := executeTaskCmd()
 	if err == nil {
 		t.Error("task without goal should fail")
@@ -49,6 +52,7 @@ func TestTaskRequiresArg(t *testing.T) {
 }
 
 func TestTaskHelp(t *testing.T) {
+	chdirTempDir(t)
 	out, err := executeTaskCmd("--help")
 	if err != nil {
 		t.Fatalf("task --help failed: %v", err)
@@ -62,6 +66,7 @@ func TestTaskHelp(t *testing.T) {
 }
 
 func TestTaskAllStates(t *testing.T) {
+	chdirTempDir(t)
 	out, err := executeTaskCmd("verify-states", "--dry-run")
 	if err != nil {
 		t.Fatalf("task --dry-run failed: %v", err)

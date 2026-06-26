@@ -1,6 +1,6 @@
 # ForgeCrew installer for Windows PowerShell
 # Downloads the latest forgecrew.exe from GitHub Releases.
-# Falls back to go build if no release is found.
+# Installs to user-local directory, no admin required.
 
 param(
     [string]$Version = "latest",
@@ -11,20 +11,29 @@ $Repo = "1424772/ForgeCrew"
 $Binary = "forgecrew.exe"
 
 if ($InstallDir -eq "") {
-    $InstallDir = "$env:LOCALAPPDATA\forgecrew"
+    $InstallDir = "$env:USERPROFILE\.forgecrew\bin"
 }
 
-# Detect architecture.
-$Arch = if ([Environment]::Is64BitOperatingSystem) { "amd64" } else { "386" }
+# Detect architecture using RuntimeInformation.OSArchitecture.
+$Arch = switch ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) {
+    "X64"   { "amd64" }
+    "Arm64" { "arm64" }
+    default {
+        Write-Host "[forgecrew] Unsupported architecture: $([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)" -ForegroundColor Red
+        Write-Host "[forgecrew] This installer supports x64 and arm64 only." -ForegroundColor Red
+        exit 1
+    }
+}
 $OS = "windows"
 
 Write-Host "[forgecrew] Installing ForgeCrew $Version for $OS/$Arch..." -ForegroundColor Green
+Write-Host "[forgecrew] Install directory: $InstallDir" -ForegroundColor Green
 
-# Build download URL.
+# Build download URL (GitHub Releases placeholder until releases are tagged).
 $ReleaseUrl = if ($Version -eq "latest") {
-    "https://github.com/${Repo}/releases/latest/download/${Binary}-${OS}-${Arch}.exe"
+    "https://github.com/${Repo}/releases/latest/download/forgecrew_${OS}_${Arch}.exe"
 } else {
-    "https://github.com/${Repo}/releases/download/${Version}/${Binary}-${OS}-${Arch}.exe"
+    "https://github.com/${Repo}/releases/download/${Version}/forgecrew_${OS}_${Arch}.exe"
 }
 
 # Create install directory.
@@ -32,56 +41,73 @@ if (-not (Test-Path $InstallDir)) {
     New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 }
 
-$TempFile = Join-Path $env:TEMP $Binary
+$DestFile = Join-Path $InstallDir $Binary
+$TmpFile = "$DestFile.tmp.$PID"
 
-# Try to download from GitHub Releases.
+# Clean up any leftover temp file from a previous failed run.
+Remove-Item -Force $TmpFile -ErrorAction SilentlyContinue | Out-Null
+
+# Download to temp file first, validate, then move to final path.
+$DownloadOk = $false
 try {
     Write-Host "[forgecrew] Downloading $ReleaseUrl ..." -ForegroundColor Green
     $ProgressPreference = 'SilentlyContinue'
-    Invoke-WebRequest -Uri $ReleaseUrl -OutFile $TempFile -ErrorAction Stop
+    Invoke-WebRequest -Uri $ReleaseUrl -OutFile $TmpFile -ErrorAction Stop
     $DownloadOk = $true
 } catch {
-    Write-Host "[forgecrew] Release download failed: $_" -ForegroundColor Yellow
-    $DownloadOk = $false
+    Write-Host "[forgecrew] Download failed: $_" -ForegroundColor Yellow
 }
 
-if (-not $DownloadOk -or -not (Test-Path $TempFile)) {
+# Validate the downloaded temp file before moving it.
+if ($DownloadOk) {
+    if (-not (Test-Path $TmpFile)) {
+        Write-Host "[forgecrew] Downloaded temp file not found." -ForegroundColor Red
+        $DownloadOk = $false
+    } elseif ((Get-Item $TmpFile).Length -eq 0) {
+        Write-Host "[forgecrew] Downloaded file is empty." -ForegroundColor Red
+        Remove-Item -Force $TmpFile -ErrorAction SilentlyContinue | Out-Null
+        $DownloadOk = $false
+    }
+}
+
+if (-not $DownloadOk) {
+    Remove-Item -Force $TmpFile -ErrorAction SilentlyContinue | Out-Null
     Write-Host ""
-    Write-Host "[forgecrew] Release not found. Building from source or use manual install." -ForegroundColor Yellow
+    Write-Host "[forgecrew] Release not found at $ReleaseUrl" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "[forgecrew] ForgeCrew binaries are not yet published to GitHub Releases." -ForegroundColor Yellow
+    Write-Host "[forgecrew] You can build from source:" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "  git clone https://github.com/${Repo}.git" -ForegroundColor Yellow
+    Write-Host "  cd ForgeCrew" -ForegroundColor Yellow
+    Write-Host "  go build -o ${Binary} .\cmd\forgecrew" -ForegroundColor Yellow
+    Write-Host "  move ${Binary} ${InstallDir}\" -ForegroundColor Yellow
     Write-Host ""
 
     $GoCmd = Get-Command go -ErrorAction SilentlyContinue
     if ($GoCmd) {
-        Write-Host "[forgecrew] Building from source with 'go install'..." -ForegroundColor Green
-        go install "github.com/${Repo}/cmd/forgecrew@latest"
-        Write-Host "[forgecrew] Installed via go install." -ForegroundColor Green
-        exit 0
+        Write-Host "[forgecrew] Go detected. You can also run:" -ForegroundColor Green
+        Write-Host "  go install github.com/${Repo}/cmd/forgecrew@latest" -ForegroundColor Green
     }
-
-    Write-Host "Option 1: Install Go (https://go.dev/dl/) and run:" -ForegroundColor Yellow
-    Write-Host "  go install github.com/${Repo}/cmd/forgecrew@latest"
-    Write-Host ""
-    Write-Host "Option 2: Clone and build manually:" -ForegroundColor Yellow
-    Write-Host "  git clone https://github.com/${Repo}.git"
-    Write-Host "  cd ForgeCrew"
-    Write-Host "  go build -o forgecrew.exe .\cmd\forgecrew"
-    Write-Host "  move forgecrew.exe $InstallDir\"
     exit 1
 }
 
-# Install the binary.
-$DestFile = Join-Path $InstallDir $Binary
-Move-Item -Force -Path $TempFile -Destination $DestFile
+# Download validated — move temp file to final path.
+Move-Item -Force $TmpFile $DestFile
 
-# Add to PATH if not already there.
-$UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if ($UserPath -notlike "*$InstallDir*") {
-    Write-Host "[forgecrew] Adding $InstallDir to user PATH..." -ForegroundColor Green
-    [Environment]::SetEnvironmentVariable("Path", "$UserPath;$InstallDir", "User")
-    $env:Path = "$env:Path;$InstallDir"
+Write-Host "[forgecrew] ForgeCrew installed to $DestFile" -ForegroundColor Green
+Write-Host ""
+
+# Check if install dir is in PATH.
+$currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($currentPath -notlike "*$InstallDir*") {
+    Write-Host "[forgecrew] NOTE: $InstallDir is not in your PATH." -ForegroundColor Yellow
+    Write-Host "[forgecrew] To add it, run the following in PowerShell:" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host '  [Environment]::SetEnvironmentVariable("Path", $env:Path + ";' + "$InstallDir" + '", "User")' -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "[forgecrew] Then restart your terminal, or run for this session:" -ForegroundColor Yellow
+    Write-Host '  $env:Path += ";' + "$InstallDir" + '"' -ForegroundColor Yellow
 }
 
-Write-Host "[forgecrew] ForgeCrew installed successfully!" -ForegroundColor Green
 Write-Host "[forgecrew] Run 'forgecrew init' in your project to get started." -ForegroundColor Green
-Write-Host "[forgecrew] If the command is not found, restart your terminal or run:" -ForegroundColor Green
-Write-Host "  `$env:Path += ';$InstallDir'" -ForegroundColor Green

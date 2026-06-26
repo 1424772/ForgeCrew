@@ -27,10 +27,21 @@ curl -fsSL https://raw.githubusercontent.com/1424772/ForgeCrew/main/scripts/inst
 
 **Windows PowerShell：**
 ```powershell
-irm https://raw.githubusercontent.com/1424772/ForgeCrew/main/scripts/install.ps1 | iex
+iwr https://raw.githubusercontent.com/1424772/ForgeCrew/main/scripts/install.ps1 -useb | iex
 ```
 
-脚本会从 GitHub Releases 下载最新二进制，如果 release 不存在则自动回退到 `go install`。
+**Windows CMD：**
+```cmd
+powershell -ExecutionPolicy Bypass -Command "iwr https://raw.githubusercontent.com/1424772/ForgeCrew/main/scripts/install.ps1 -useb | iex"
+```
+
+安装后可直接运行：
+```cmd
+forgecrew
+```
+
+脚本安装到用户目录（`~/.forgecrew/bin/` 或 `%USERPROFILE%\.forgecrew\bin\`），无需管理员权限。
+如果 GitHub Releases 尚未发布，脚本会提示如何通过 `go build` 本地构建。
 
 ### 手动安装
 
