@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/1424772/ForgeCrew/internal/config"
 	"gopkg.in/yaml.v3"
 )
 
@@ -90,7 +91,7 @@ func (s *Scanner) detectFromFiles(root string, p *Profile) {
 	seenFrameworks := map[string]bool{}
 
 	for file, info := range indicators {
-		if fileExists(filepath.Join(root, file)) {
+		if config.FileExists(filepath.Join(root, file)) {
 			if info.lang != "" && !seenLangs[info.lang] {
 				p.Languages = append(p.Languages, info.lang)
 				seenLangs[info.lang] = true
@@ -103,7 +104,7 @@ func (s *Scanner) detectFromFiles(root string, p *Profile) {
 	}
 
 	// Detect more frameworks from go.mod content.
-	if fileExists(filepath.Join(root, "go.mod")) {
+	if config.FileExists(filepath.Join(root, "go.mod")) {
 		data, err := os.ReadFile(filepath.Join(root, "go.mod"))
 		if err == nil {
 			content := string(data)
@@ -124,14 +125,6 @@ func (s *Scanner) detectFromFiles(root string, p *Profile) {
 }
 
 func (s *Scanner) detectTests(root string, p *Profile) {
-	// Directories to skip during walk.
-	skipDirs := map[string]bool{
-		".git":         true,
-		".forgecrew":   true,
-		"vendor":       true,
-		"node_modules": true,
-	}
-
 	// Test file name patterns (exact suffix match).
 	testSuffixes := []string{
 		"_test.go",
@@ -163,7 +156,7 @@ func (s *Scanner) detectTests(root string, p *Profile) {
 
 		// Skip ignored directories.
 		if d.IsDir() {
-			if skipDirs[name] {
+			if config.SkipDirs[name] {
 				return fs.SkipDir
 			}
 			// Check if this directory itself is a test directory.
@@ -195,14 +188,14 @@ func (s *Scanner) detectTests(root string, p *Profile) {
 }
 
 func (s *Scanner) detectDocker(root string, p *Profile) {
-	p.HasDocker = fileExists(filepath.Join(root, "Dockerfile")) ||
-		fileExists(filepath.Join(root, "docker-compose.yml")) ||
-		fileExists(filepath.Join(root, "docker-compose.yaml")) ||
-		fileExists(filepath.Join(root, ".dockerignore"))
+	p.HasDocker = config.FileExists(filepath.Join(root, "Dockerfile")) ||
+		config.FileExists(filepath.Join(root, "docker-compose.yml")) ||
+		config.FileExists(filepath.Join(root, "docker-compose.yaml")) ||
+		config.FileExists(filepath.Join(root, ".dockerignore"))
 }
 
 func (s *Scanner) detectAgentsMD(root string, p *Profile) {
-	p.HasAgentsMD = fileExists(filepath.Join(root, "AGENTS.md"))
+	p.HasAgentsMD = config.FileExists(filepath.Join(root, "AGENTS.md"))
 }
 
 func (s *Scanner) detectGitHubActions(root string, p *Profile) {
@@ -281,11 +274,6 @@ func (p *Profile) toJSON() (string, error) {
 		return "", err
 	}
 	return string(out) + "\n", nil
-}
-
-func fileExists(path string) bool {
-	info, err := os.Stat(path)
-	return err == nil && !info.IsDir()
 }
 
 func contains(slice []string, item string) bool {

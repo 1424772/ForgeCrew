@@ -3,6 +3,7 @@
 package orchestrator
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -103,7 +104,14 @@ func (sm *StateMachine) Next() bool {
 }
 
 // Execute runs the current step (dry-run: just logs the step).
-func (sm *StateMachine) Execute(taskID string) (*StepResult, error) {
+// It checks ctx.Err() before execution so long-running sequences can be
+// cancelled cooperatively.
+func (sm *StateMachine) Execute(ctx context.Context, taskID string) (*StepResult, error) {
+	// Check for cancellation before executing the step.
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("step %s cancelled: %w", sm.CurrentStep, err)
+	}
+
 	result := &StepResult{
 		Step: sm.CurrentStep,
 		OK:   true,
@@ -163,13 +171,24 @@ type RunResult struct {
 
 // RunFull executes the complete Loop Engineering cycle for a given goal.
 // It advances through all steps until completion and returns the full result.
-func (sm *StateMachine) RunFull(goal string) *RunResult {
+// The context is checked before each step; if ctx is cancelled the loop
+// stops and records the cancellation in the result.
+func (sm *StateMachine) RunFull(ctx context.Context, goal string) *RunResult {
 	result := &RunResult{
 		Goal:   goal,
 		DryRun: sm.DryRun,
 	}
 	for sm.Next() {
-		sr, _ := sm.Execute(goal)
+		sr, err := sm.Execute(ctx, goal)
+		if err != nil {
+			// Cancellation or other fatal error — record and stop.
+			result.Steps = append(result.Steps, StepResult{
+				Step: sm.CurrentStep,
+				OK:   false,
+				Note: err.Error(),
+			})
+			return result
+		}
 		result.Steps = append(result.Steps, *sr)
 	}
 	return result

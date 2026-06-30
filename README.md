@@ -35,12 +35,14 @@ iwr https://raw.githubusercontent.com/1424772/ForgeCrew/main/scripts/install.ps1
 powershell -ExecutionPolicy Bypass -Command "iwr https://raw.githubusercontent.com/1424772/ForgeCrew/main/scripts/install.ps1 -useb | iex"
 ```
 
-安装后可直接运行：
-```cmd
-forgecrew
+脚本从 GitHub Releases (`releases/latest/download`) 获取二进制并校验 SHA256。
+安装目录为用户目录（`~/.forgecrew/bin/` 或 `%USERPROFILE%\.forgecrew\bin\`），无需管理员权限。
+
+安装完成后，**重新打开终端**（或按脚本提示更新当前终端的 PATH）再运行：
+```bash
+forgecrew version
 ```
 
-脚本安装到用户目录（`~/.forgecrew/bin/` 或 `%USERPROFILE%\.forgecrew\bin\`），无需管理员权限。
 如果 GitHub Releases 尚未发布，脚本会提示如何通过 `go build` 本地构建。
 
 ### 手动安装
@@ -55,7 +57,7 @@ cd ForgeCrew
 go build -o forgecrew ./cmd/forgecrew
 ```
 
-要求 Go 1.21+。
+要求 Go 1.26.4+。
 
 ## 快速开始
 

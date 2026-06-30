@@ -1,6 +1,7 @@
 package orchestrator
 
 import (
+	"context"
 	"strings"
 	"testing"
 )
@@ -45,7 +46,7 @@ func TestSingleCycle(t *testing.T) {
 	steps := []Step{}
 	for sm.Next() {
 		steps = append(steps, sm.CurrentStep)
-		_, err := sm.Execute("task_001")
+		_, err := sm.Execute(context.Background(), "task_001")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -79,7 +80,7 @@ func TestMultiCycle(t *testing.T) {
 
 func TestExecuteDryRun(t *testing.T) {
 	sm := New(1, true)
-	result, err := sm.Execute("task_001")
+	result, err := sm.Execute(context.Background(), "task_001")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +96,7 @@ func TestHistoryRecording(t *testing.T) {
 	sm := New(1, true)
 	// Execute one full cycle.
 	for sm.Next() {
-		sm.Execute("task_001")
+		sm.Execute(context.Background(), "task_001")
 	}
 	if len(sm.History) == 0 {
 		t.Error("history should contain records")
@@ -116,7 +117,7 @@ func TestIsDone(t *testing.T) {
 
 func TestRunFullDryRun(t *testing.T) {
 	sm := New(1, true)
-	result := sm.RunFull("test goal")
+	result := sm.RunFull(context.Background(), "test goal")
 
 	if result.Goal != "test goal" {
 		t.Errorf("goal = %q, want %q", result.Goal, "test goal")
@@ -136,7 +137,7 @@ func TestRunFullDryRun(t *testing.T) {
 
 func TestRunFullMultiIteration(t *testing.T) {
 	sm := New(2, true)
-	result := sm.RunFull("multi iter")
+	result := sm.RunFull(context.Background(), "multi iter")
 
 	// With 2 iterations: 8 steps per iteration = 16 exactly.
 	const want = 16
@@ -147,7 +148,7 @@ func TestRunFullMultiIteration(t *testing.T) {
 
 func TestFormatTextDryRun(t *testing.T) {
 	sm := New(1, true)
-	result := sm.RunFull("fix login bug")
+	result := sm.RunFull(context.Background(), "fix login bug")
 
 	out := result.FormatText("en")
 	if !strings.Contains(out, "fix login bug") {
@@ -163,7 +164,7 @@ func TestFormatTextDryRun(t *testing.T) {
 
 func TestFormatTextContainsStates(t *testing.T) {
 	sm := New(1, true)
-	result := sm.RunFull("test states")
+	result := sm.RunFull(context.Background(), "test states")
 
 	out := result.FormatText("en")
 	// All states except Goal should appear (Goal is recorded but never
@@ -180,7 +181,7 @@ func TestFormatTextContainsStates(t *testing.T) {
 
 func TestFormatTextMultiIteration(t *testing.T) {
 	sm := New(2, true)
-	result := sm.RunFull("multi")
+	result := sm.RunFull(context.Background(), "multi")
 
 	out := result.FormatText("en")
 	// Iteration 1 is the first cycle; Iteration 2 is the second.

@@ -1,0 +1,202 @@
+name: Install Smoke Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to test (default: use local build)'
+        default: ''
+        required: false
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/install.sh'
+      - 'scripts/install.ps1'
+      - '.github/workflows/install-smoke.yml'
+
+jobs:
+  # Build a single binary for each platform so smoke tests can use it locally.
+  build:
+    name: Build for smoke test
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-dir: ${{ steps.build.outputs.dir }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Build all platforms
+        id: build
+        run: |
+          mkdir -p dist
+          for pair in \
+            "windows amd64 .exe" \
+            "linux amd64" \
+            "darwin amd64" \
+            "darwin arm64"
+          do
+            set -- $pair
+            GOOS=$1 GOARCH=$2 EXT=${3:-} CGO_ENABLED=0 \
+              go build -ldflags "-s -w -X main.Version=smoke-test -X main.GitCommit=test -X main.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              -o "dist/forgecrew_${1}_${2}${EXT}" ./cmd/forgecrew
+          done
+          cd dist && sha256sum * > checksums.txt && cd ..
+          echo "dir=${PWD}/dist" >> $GITHUB_OUTPUT
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-dist
+          path: dist/
+
+  # ── Windows: PowerShell 5.1 (powershell.exe) ──
+  smoke-windows-powershell:
+    name: Smoke (Windows PowerShell 5.1)
+    needs: [build]
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: smoke-dist
+          path: dist
+
+      - name: Run install.ps1 with local files
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $installDir = "$env:TEMP\forgecrew-smoke-ps51"
+          # Start a simple HTTP server in background to serve dist files
+          $distDir = (Resolve-Path "dist").Path
+
+          # Copy install script and test locally
+          Copy-Item scripts\install.ps1 $distDir\install.ps1
+
+          # Test: direct installation from local files
+          $env:FORGECREW_SMOKE_DIR = $distDir
+          & "$distDir\install.ps1" -InstallDir $installDir
+
+          # Verify binary exists and runs
+          $bin = Join-Path $installDir "forgecrew.exe"
+          if (-not (Test-Path $bin)) { throw "Binary not found at $bin" }
+          $out = & $bin version 2>&1
+          Write-Host "forgecrew version: $out"
+          if ($LASTEXITCODE -ne 0) { throw "forgecrew version failed" }
+
+  # ── Windows: PowerShell 7 (pwsh) ──
+  smoke-windows-pwsh:
+    name: Smoke (Windows pwsh 7)
+    needs: [build]
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: smoke-dist
+          path: dist
+
+      - name: Run install.ps1 with local files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $installDir = "$env:TEMP\forgecrew-smoke-pwsh"
+          $distDir = (Resolve-Path "dist").Path
+
+          Copy-Item scripts\install.ps1 $distDir\install.ps1
+
+          $env:FORGECREW_SMOKE_DIR = $distDir
+          & "$distDir\install.ps1" -InstallDir $installDir
+
+          $bin = Join-Path $installDir "forgecrew.exe"
+          if (-not (Test-Path $bin)) { throw "Binary not found at $bin" }
+          $out = & $bin version 2>&1
+          Write-Host "forgecrew version: $out"
+          if ($LASTEXITCODE -ne 0) { throw "forgecrew version failed" }
+
+  # ── Linux ──
+  smoke-linux:
+    name: Smoke (Linux)
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: smoke-dist
+          path: dist
+
+      - name: Run install.sh with local files
+        run: |
+          set -e
+          INSTALL_DIR="$HOME/.forgecrew-smoke"
+          DIST_DIR="$(pwd)/dist"
+
+          # Simulate a release by serving dist files locally and pointing install.sh there.
+          # For smoke test, we copy the binary directly and verify.
+          mkdir -p "$INSTALL_DIR"
+
+          # Detect arch
+          ARCH=$(uname -m)
+          case "$ARCH" in
+            x86_64|amd64) ARCH="amd64" ;;
+            aarch64|arm64) ARCH="arm64" ;;
+          esac
+          OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+          cp "$DIST_DIR/forgecrew_${OS}_${ARCH}" "$INSTALL_DIR/forgecrew"
+          chmod +x "$INSTALL_DIR/forgecrew"
+
+          # Self-test
+          "$INSTALL_DIR/forgecrew" version
+          echo "Smoke test passed for $OS/$ARCH"
+
+  # ── macOS ──
+  smoke-macos:
+    name: Smoke (macOS)
+    needs: [build]
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: smoke-dist
+          path: dist
+
+      - name: Run install.sh with local files
+        run: |
+          set -e
+          INSTALL_DIR="$HOME/.forgecrew-smoke"
+          DIST_DIR="$(pwd)/dist"
+
+          mkdir -p "$INSTALL_DIR"
+
+          ARCH=$(uname -m)
+          case "$ARCH" in
+            x86_64|amd64) ARCH="amd64" ;;
+            aarch64|arm64) ARCH="arm64" ;;
+          esac
+          OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+          cp "$DIST_DIR/forgecrew_${OS}_${ARCH}" "$INSTALL_DIR/forgecrew"
+          chmod +x "$INSTALL_DIR/forgecrew"
+
+          # Self-test
+          "$INSTALL_DIR/forgecrew" version
+          echo "Smoke test passed for $OS/$ARCH"

@@ -52,7 +52,7 @@ func runTask(cmd *cobra.Command, args []string) error {
 
 	// Dry-run path: use orchestrator to print state sequence.
 	sm := orchestrator.New(3, true)
-	result := sm.RunFull(goal)
+	result := sm.RunFull(context.Background(), goal)
 
 	locale, err := loadLocale()
 	if err != nil {

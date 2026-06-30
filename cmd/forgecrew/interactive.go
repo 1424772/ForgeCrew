@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -214,7 +215,7 @@ func runInteractiveTask(w io.Writer, goal string, mode string, loc i18n.Locale) 
 		// Full dry-run through orchestrator.
 		fmt.Fprintf(w, "\n%s: %s\n", i18n.T("interactive.mode", loc)+"plan", goal)
 		sm := orchestrator.New(3, true)
-		result := sm.RunFull(goal)
+		result := sm.RunFull(context.Background(), goal)
 		fmt.Fprint(w, result.FormatText(string(loc)))
 		fmt.Fprintln(w)
 
@@ -231,7 +232,7 @@ func runInteractiveTask(w io.Writer, goal string, mode string, loc i18n.Locale) 
 	default:
 		// Fallback: same as plan.
 		sm := orchestrator.New(3, true)
-		result := sm.RunFull(goal)
+		result := sm.RunFull(context.Background(), goal)
 		fmt.Fprint(w, result.FormatText(string(loc)))
 		fmt.Fprintln(w)
 	}

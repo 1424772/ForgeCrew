@@ -80,3 +80,13 @@ func FileExists(path string) bool {
 	}
 	return !info.IsDir()
 }
+
+// SkipDirs lists directory names that tools should skip during traversal.
+// These are common noise directories: VCS, package managers, build artifacts.
+var SkipDirs = map[string]bool{
+	".git":         true,
+	".forgecrew":   true,
+	"vendor":       true,
+	"node_modules": true,
+	".claude":      true,
+}

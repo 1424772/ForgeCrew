@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/1424772/ForgeCrew/internal/config"
 )
 
 // localTempDir creates a temporary directory within the current package
@@ -244,23 +246,130 @@ func TestCreateCheckpoint(t *testing.T) {
 	}
 }
 
-func TestGeneratePatchNotImplemented(t *testing.T) {
+func TestGeneratePatchNoChanges(t *testing.T) {
 	_, err := GeneratePatch(".", nil)
 	if err == nil {
-		t.Error("expected ErrNotImplemented for GeneratePatch")
+		t.Error("expected error for nil changes")
+	}
+	_, err = GeneratePatch(".", []FileChange{})
+	if err == nil {
+		t.Error("expected error for empty changes")
 	}
 }
 
-func TestRunTestNotImplemented(t *testing.T) {
-	_, err := RunTest(".")
-	if err == nil {
-		t.Error("expected ErrNotImplemented for RunTest")
+func TestGeneratePatchCreateFile(t *testing.T) {
+	tmp := localTempDir(t)
+	changes := []FileChange{
+		{Path: "newfile.txt", Content: "hello\nworld", Action: "create"},
+	}
+	patch, err := GeneratePatch(tmp, changes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if patch == "" {
+		t.Error("expected non-empty patch output")
+	}
+	data, err := os.ReadFile(filepath.Join(tmp, "newfile.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "hello\nworld" {
+		t.Errorf("content = %q, want \"hello\\nworld\"", string(data))
 	}
 }
 
-func TestRollbackNotImplemented(t *testing.T) {
-	err := Rollback("ckpt_001")
+func TestGeneratePatchCreateWithMissingParent(t *testing.T) {
+	tmp := localTempDir(t)
+	changes := []FileChange{
+		{Path: "sub/deep/new.go", Content: "package deep", Action: "create"},
+	}
+	_, err := GeneratePatch(tmp, changes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !config.FileExists(filepath.Join(tmp, "sub", "deep", "new.go")) {
+		t.Error("file should exist after create with missing parent dirs")
+	}
+}
+
+func TestGeneratePatchUpdateFile(t *testing.T) {
+	tmp := localTempDir(t)
+	orig := filepath.Join(tmp, "existing.go")
+	if err := os.WriteFile(orig, []byte("old content"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	changes := []FileChange{
+		{Path: "existing.go", Content: "new content", Action: "update"},
+	}
+	patch, err := GeneratePatch(tmp, changes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if patch == "" {
+		t.Error("expected non-empty patch output")
+	}
+	data, err := os.ReadFile(orig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "new content" {
+		t.Errorf("content = %q, want \"new content\"", string(data))
+	}
+}
+
+func TestGeneratePatchDeleteFile(t *testing.T) {
+	tmp := localTempDir(t)
+	f := filepath.Join(tmp, "remove_me.txt")
+	if err := os.WriteFile(f, []byte("garbage"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	changes := []FileChange{
+		{Path: "remove_me.txt", Content: "", Action: "delete"},
+	}
+	_, err := GeneratePatch(tmp, changes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config.FileExists(f) {
+		t.Error("file should be deleted")
+	}
+}
+
+func TestGeneratePatchPathEscape(t *testing.T) {
+	tmp := localTempDir(t)
+	changes := []FileChange{
+		{Path: "../etc/passwd", Content: "evil", Action: "create"},
+	}
+	_, err := GeneratePatch(tmp, changes)
 	if err == nil {
-		t.Error("expected ErrNotImplemented for Rollback")
+		t.Error("expected path escape error")
+	}
+}
+
+func TestRunTestDetectsFramework(t *testing.T) {
+	tmp := localTempDir(t)
+	if err := os.WriteFile(filepath.Join(tmp, "go.mod"), []byte("module test"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmp, "main_test.go"), []byte("package test\nimport \"testing\"\nfunc TestOK(t *testing.T) {}\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	out, err := RunTest(tmp)
+	if err != nil {
+		if strings.Contains(err.Error(), "could not detect") {
+			t.Errorf("should detect Go test framework: %v", err)
+		}
+		t.Logf("RunTest output: %v\n%s", err, out)
+	}
+}
+
+func TestRollbackNotFound(t *testing.T) {
+	tmp := localTempDir(t)
+	err := Rollback(tmp, "nonexistent_ckpt")
+	if err == nil {
+		t.Error("expected error for nonexistent checkpoint")
+	}
+	if !strings.Contains(err.Error(), "not found") {
+		t.Errorf("error should mention 'not found', got: %v", err)
 	}
 }

@@ -35,12 +35,14 @@ iwr https://raw.githubusercontent.com/1424772/ForgeCrew/main/scripts/install.ps1
 powershell -ExecutionPolicy Bypass -Command "iwr https://raw.githubusercontent.com/1424772/ForgeCrew/main/scripts/install.ps1 -useb | iex"
 ```
 
-Run directly after installation:
-```cmd
-forgecrew
+The scripts download binaries from GitHub Releases (`releases/latest/download`) and verify SHA256 checksums.
+Install directory is user-local (`~/.forgecrew/bin/` or `%USERPROFILE%\.forgecrew\bin\`), no admin privileges required.
+
+After installation, **restart your terminal** (or follow the script's PATH instructions) and run:
+```bash
+forgecrew version
 ```
 
-Scripts install to the user directory (`~/.forgecrew/bin/` or `%USERPROFILE%\.forgecrew\bin\`), no admin privileges required.
 If GitHub Releases are not yet published, the script will guide you through local builds via `go build`.
 
 ### Manual Install
@@ -55,7 +57,7 @@ cd ForgeCrew
 go build -o forgecrew ./cmd/forgecrew
 ```
 
-Requires Go 1.21+.
+Requires Go 1.26.4+.
 
 ## Quick Start
 

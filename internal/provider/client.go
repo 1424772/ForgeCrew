@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"strings"
@@ -36,9 +37,10 @@ type Usage struct {
 
 // Response is the result of a chat completion call.
 type Response struct {
-	Text  string
-	Model string
-	Usage *Usage // nil if provider didn't return usage data
+	Text       string
+	Model      string
+	Usage      *Usage // nil if provider didn't return usage data
+	StatusCode int    // HTTP status code from the provider
 }
 
 // Client sends chat completion requests to an LLM provider.
@@ -57,12 +59,20 @@ var DefaultBaseURLs = map[string]string{
 	"devstral":  "https://api.devstral.com/v1",
 }
 
+// Retry configuration defaults.
+const (
+	DefaultMaxRetries = 3
+	DefaultBaseDelay  = 1 * time.Second
+)
+
 // openAIClient implements Client for OpenAI-compatible APIs.
 type openAIClient struct {
 	baseURL    string
 	apiKey     string
 	modelName  string
 	httpClient *http.Client
+	maxRetries int
+	baseDelay  time.Duration
 }
 
 // NewClient creates a new provider Client from a model definition.
@@ -93,18 +103,21 @@ func NewClient(def models.ModelDefinition) (Client, error) {
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
+		maxRetries: DefaultMaxRetries,
+		baseDelay:  DefaultBaseDelay,
 	}, nil
 }
 
 // Complete sends a chat completion request and returns the response.
-// Safety: error messages never include the API key or sensitive values.
+// It retries on transient failures (429, 5xx) with exponential backoff
+// up to maxRetries times. Non-retryable errors (4xx except 429) fail
+// immediately. Safety: error messages never include the API key.
 func (c *openAIClient) Complete(ctx context.Context, req Request) (Response, error) {
 	model := c.modelName
 	if req.Model != "" {
 		model = req.Model
 	}
 
-	// Build OpenAI-compatible request body.
 	body := chatRequest{
 		Model: model,
 		Messages: []chatMessage{
@@ -118,8 +131,59 @@ func (c *openAIClient) Complete(ctx context.Context, req Request) (Response, err
 		return Response{}, fmt.Errorf("provider: marshal request: %w", err)
 	}
 
+	var lastErr error
+	for attempt := 0; attempt <= c.maxRetries; attempt++ {
+		if attempt > 0 {
+			delay := time.Duration(math.Min(
+				float64(c.baseDelay)*math.Pow(2, float64(attempt-1)),
+				float64(30*time.Second),
+			))
+			select {
+			case <-ctx.Done():
+				return Response{}, fmt.Errorf("provider: context cancelled during retry: %w", ctx.Err())
+			case <-time.After(delay):
+			}
+		}
+
+		resp, respErr := c.doRequest(ctx, bytes.NewReader(bodyBytes))
+
+		// Network/timeout errors (no HTTP status) are always retryable.
+		if respErr != nil && resp.StatusCode == 0 {
+			lastErr = respErr
+			continue
+		}
+
+		// Content errors at 2xx (bad JSON, empty body) are permanent — don't retry.
+		if respErr != nil && resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			return resp, respErr
+		}
+
+		// Permanent client errors (4xx except 429) — don't retry.
+		if resp.StatusCode >= 400 && resp.StatusCode < 500 && resp.StatusCode != 429 {
+			return resp, respErr
+		}
+
+		// Success (2xx, no error) — done.
+		if respErr == nil && resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			return resp, nil
+		}
+
+		// Retryable: 429 or 5xx (with or without body parse errors).
+		lastErr = fmt.Errorf("provider: HTTP %d (attempt %d/%d)",
+			resp.StatusCode, attempt+1, c.maxRetries+1)
+		if respErr != nil {
+			lastErr = respErr
+		}
+	}
+
+	return Response{}, fmt.Errorf("provider: request failed after %d retries: %w",
+		c.maxRetries+1, lastErr)
+}
+
+// doRequest executes a single HTTP request and parses the response.
+func (c *openAIClient) doRequest(ctx context.Context, bodyReader io.Reader) (Response, error) {
 	url := c.baseURL + "/chat/completions"
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(bodyBytes))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bodyReader)
 	if err != nil {
 		return Response{}, fmt.Errorf("provider: create request: %w", err)
 	}
@@ -139,22 +203,23 @@ func (c *openAIClient) Complete(ctx context.Context, req Request) (Response, err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		// Include response body for diagnostics but never the API key.
-		return Response{}, fmt.Errorf("provider: HTTP %d: %s", resp.StatusCode, string(respBody))
+		return Response{Text: resp.Status, StatusCode: resp.StatusCode}, fmt.Errorf("provider: HTTP %d: %s", resp.StatusCode, string(respBody))
 	}
+
+	statusCode := resp.StatusCode
 
 	var cr chatResponse
 	if err := json.Unmarshal(respBody, &cr); err != nil {
-		return Response{}, fmt.Errorf("provider: parse response: %w", err)
+		return Response{StatusCode: statusCode}, fmt.Errorf("provider: parse response: %w", err)
 	}
 
 	if len(cr.Choices) == 0 {
-		return Response{}, fmt.Errorf("provider: empty response (no choices)")
+		return Response{StatusCode: statusCode}, fmt.Errorf("provider: empty response (no choices)")
 	}
 
 	text := cr.Choices[0].Message.Content
 	if text == "" {
-		return Response{}, fmt.Errorf("provider: empty response text")
+		return Response{StatusCode: statusCode}, fmt.Errorf("provider: empty response text")
 	}
 
 	var usage *Usage
@@ -167,9 +232,10 @@ func (c *openAIClient) Complete(ctx context.Context, req Request) (Response, err
 	}
 
 	return Response{
-		Text:  text,
-		Model: cr.Model,
-		Usage: usage,
+		Text:       text,
+		Model:      cr.Model,
+		Usage:      usage,
+		StatusCode: statusCode,
 	}, nil
 }
 
