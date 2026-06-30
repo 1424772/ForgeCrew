@@ -286,12 +286,14 @@ agents:
 // DefaultModelsYAML is the default models configuration.
 const DefaultModelsYAML = `# ForgeCrew Model Definitions
 # Each model defines a provider, capabilities, and cost tier.
+# base_url is optional — leave commented to use the provider default.
 
 models:
   gpt_5_5:
     provider: openai
     model: gpt-5.5
     api_key_env: OPENAI_API_KEY
+    # base_url: https://api.openai.com/v1
     role: reasoning
     cost_tier: high
     supports_tools: true
@@ -301,6 +303,7 @@ models:
     provider: anthropic
     model: claude-opus-4-8
     api_key_env: ANTHROPIC_API_KEY
+    # base_url:
     role: review
     cost_tier: high
     supports_tools: true
@@ -310,6 +313,7 @@ models:
     provider: google
     model: gemini-3.1-pro
     api_key_env: GEMINI_API_KEY
+    # base_url:
     role: multimodal
     cost_tier: high
     supports_tools: true
@@ -319,6 +323,7 @@ models:
     provider: zhipu
     model: glm-5.2
     api_key_env: ZHIPU_API_KEY
+    # base_url: https://open.bigmodel.cn/api/paas/v4
     role: coding
     cost_tier: medium
     supports_tools: true
@@ -328,6 +333,7 @@ models:
     provider: moonshot
     model: kimi-k2.7-code
     api_key_env: MOONSHOT_API_KEY
+    # base_url: https://api.moonshot.cn/v1
     role: coding
     cost_tier: medium
     supports_tools: true
@@ -337,6 +343,7 @@ models:
     provider: deepseek
     model: deepseek-v4-pro
     api_key_env: DEEPSEEK_API_KEY
+    # base_url: https://api.deepseek.com/v1
     role: coding
     cost_tier: low
     supports_tools: true
@@ -346,6 +353,7 @@ models:
     provider: dashscope
     model: qwen3-coder
     api_key_env: DASHSCOPE_API_KEY
+    # base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
     role: coding
     cost_tier: low
     supports_tools: true
@@ -355,6 +363,7 @@ models:
     provider: dashscope
     model: qwen3.7
     api_key_env: DASHSCOPE_API_KEY
+    # base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
     role: tool_use
     cost_tier: low
     supports_tools: true
@@ -364,6 +373,7 @@ models:
     provider: devstral
     model: devstral-2
     api_key_env: DEVSTRAL_API_KEY
+    # base_url: https://api.devstral.com/v1
     role: coding
     cost_tier: medium
     supports_tools: true

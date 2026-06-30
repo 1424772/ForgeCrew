@@ -97,3 +97,53 @@ func isGitRepo(root string) bool {
 	}
 	return info.IsDir()
 }
+
+// ChangedFiles returns tracked changed files (git diff --name-only) merged
+// with untracked files (git status --short ?? lines). Results are deduplicated.
+// Returns nil slice and nil error if not in a git repo.
+func ChangedFiles(root string) ([]string, error) {
+	if !isGitRepo(root) {
+		return nil, nil
+	}
+
+	seen := make(map[string]bool)
+	var files []string
+
+	// Collect tracked changes.
+	if out, err := exec.Command("git", "diff", "--name-only").Output(); err == nil {
+		for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+			line = strings.TrimSpace(line)
+			if line != "" && !seen[line] {
+				seen[line] = true
+				files = append(files, line)
+			}
+		}
+	}
+
+	// Collect untracked files from git status --short.
+	cmd := exec.Command("git", "status", "--short")
+	cmd.Dir = root
+	out, err := cmd.Output()
+	if err != nil {
+		return files, nil
+	}
+	for _, line := range strings.Split(string(out), "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "??") {
+			// Format: "?? path/to/file" — extract path.
+			path := strings.TrimSpace(line[2:])
+			if path != "" && !seen[path] {
+				seen[path] = true
+				files = append(files, path)
+			}
+		}
+	}
+
+	return files, nil
+}
+
+// ReadDiffFull returns the full git diff plus untracked file listing.
+// This delegates to ReadDiff which already handles both tracked and untracked.
+func ReadDiffFull(root string) (string, error) {
+	return ReadDiff(root)
+}

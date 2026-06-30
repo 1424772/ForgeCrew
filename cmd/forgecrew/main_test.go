@@ -40,7 +40,7 @@ func TestRootCommandHelp(t *testing.T) {
 }
 
 func TestRootCommandAllSubCommandsRegistered(t *testing.T) {
-	expectedCmds := []string{"init", "scan", "agents", "models", "team", "diff", "checkpoint", "version", "task", "lang", "language"}
+	expectedCmds := []string{"init", "scan", "agents", "models", "team", "diff", "checkpoint", "version", "task", "lang", "language", "runs", "handoff", "cto"}
 	for _, name := range expectedCmds {
 		cmd, _, _ := rootCmd.Find([]string{name})
 		if cmd == nil {

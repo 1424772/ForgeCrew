@@ -39,6 +39,9 @@ func init() {
 	rootCmd.AddCommand(checkpointCmd())
 	rootCmd.AddCommand(taskCmd())
 	rootCmd.AddCommand(langCmd())
+	rootCmd.AddCommand(runsCmd())
+	rootCmd.AddCommand(handoffCmd())
+	rootCmd.AddCommand(ctoCmd())
 }
 
 func main() {

@@ -234,4 +234,26 @@ var translations = map[string]map[Locale]string{
 		ZH: "运行交叉校验... 请使用 'forgecrew agents validate' 执行完整校验。",
 		EN: "Running validation... Use 'forgecrew agents validate' for full cross-validation.",
 	},
+
+	// ── task execute ──
+	"task.execute_mode": {
+		ZH: " [执行]",
+		EN: " [execute]",
+	},
+	"task.execute_missing_config": {
+		ZH: "未找到模型配置文件。请先运行 'forgecrew init'。",
+		EN: "Model configuration not found. Run 'forgecrew init' first.",
+	},
+	"task.execute_no_model": {
+		ZH: "models.yaml 中没有配置任何模型。请在 models.yaml 中添加至少一个模型并设置对应的 API key 环境变量。",
+		EN: "No models configured in models.yaml. Add at least one model and set its API key environment variable.",
+	},
+	"task.execute_provider_error": {
+		ZH: "LLM 调用失败",
+		EN: "LLM call failed",
+	},
+	"task.execute_plan_header": {
+		ZH: "\n--- LLM 生成的计划 ---\n",
+		EN: "\n--- LLM Generated Plan ---\n",
+	},
 }

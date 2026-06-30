@@ -15,6 +15,7 @@ type ModelDefinition struct {
 	Provider       string `yaml:"provider" json:"provider"`
 	Model          string `yaml:"model" json:"model"`
 	APIKeyEnv      string `yaml:"api_key_env" json:"api_key_env"`
+	BaseURL        string `yaml:"base_url,omitempty" json:"base_url,omitempty"`
 	Role           string `yaml:"role" json:"role"`
 	CostTier       string `yaml:"cost_tier" json:"cost_tier"`
 	SupportsTools  bool   `yaml:"supports_tools" json:"supports_tools"`
